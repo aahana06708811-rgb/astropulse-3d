@@ -1,0 +1,9 @@
+{
+  "short_name": "AstroPulse",
+  "name": "AstroPulse 3D - Universe & Physics Portal",
+  "icons": [],
+  "start_url": "./index.html",
+  "background_color": "#020617",
+  "theme_color": "#38bdf8",
+  "display": "standalone"
+}
