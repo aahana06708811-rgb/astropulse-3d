@@ -1,0 +1,277 @@
+HTML
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AstroPulse 3D - Class 11 Astronomy & Physics Portal</title>
+  
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    :root {
+      --bg-glass: rgba(13, 18, 36, 0.85);
+      --border-glass: rgba(255, 255, 255, 0.12);
+      --accent-blue: #38bdf8;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #020617; color: var(--text-main); overflow: hidden; height: 100vh; }
+
+    #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+    .app-header {
+      position: absolute; top: 16px; left: 16px; right: 16px; z-index: 10;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 24px; background: var(--bg-glass); backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glass); border-radius: 16px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-logo { width: 24px; height: 24px; background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple)); border-radius: 50%; }
+    .brand h1 { font-size: 1.2rem; font-weight: 700; color: #fff; }
+
+    .nav-tabs { display: flex; gap: 8px; }
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-glass);
+      color: var(--text-main); padding: 8px 16px; border-radius: 8px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 500; transition: all 0.2s ease;
+    }
+    .tab-btn:hover, .tab-btn.active { background: var(--accent-blue); color: #020617; border-color: var(--accent-blue); font-weight: 600; }
+
+    .side-panel {
+      position: absolute; top: 90px; right: 16px; bottom: 16px; width: 340px; z-index: 10;
+      background: var(--bg-glass); backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glass); border-radius: 16px;
+      display: flex; flex-direction: column; padding: 20px; gap: 16px; overflow-y: auto;
+    }
+
+    .panel-section { display: none; flex-direction: column; gap: 12px; }
+    .panel-section.active { display: flex; }
+
+    .panel-title { font-size: 1rem; color: var(--accent-blue); border-bottom: 1px solid var(--border-glass); padding-bottom: 8px; }
+    
+    .data-row { display: flex; justify-content: space-between; font-size: 0.88rem; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); }
+    .data-label { color: var(--text-sub); }
+    .data-value { font-weight: 600; color: #38bdf8; }
+
+    .chat-box { height: 200px; background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .chat-msg { font-size: 0.82rem; padding: 8px 12px; border-radius: 8px; max-width: 85%; }
+    .chat-msg.bot { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); align-self: flex-start; }
+    .chat-msg.user { background: rgba(168, 85, 247, 0.2); border: 1px solid rgba(168, 85, 247, 0.3); align-self: flex-end; }
+    
+    .chat-input-wrap { display: flex; gap: 8px; }
+    .chat-input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--border-glass); padding: 8px 12px; border-radius: 8px; color: #fff; font-size: 0.85rem; }
+    .chat-send { background: var(--accent-blue); border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+
+    @media (max-width: 768px) {
+      .app-header { flex-direction: column; gap: 10px; }
+      .side-panel { width: calc(100% - 32px); height: 240px; top: auto; right: 16px; left: 16px; }
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+  <div id="canvas-container"></div>
+
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-logo"></div>
+      <h1>AstroPulse 3D</h1>
+    </div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab(event, 'physics-tab')">Class 11 Physics</button>
+      <button class="tab-btn" onclick="switchTab(event, 'eclipse-tab')">Eclipse Tracker</button>
+      <button class="tab-btn" onclick="switchTab(event, 'ai-tab')">AI Space Bot</button>
+    </div>
+  </header>
+
+  <div class="side-panel">
+    
+    <div id="physics-tab" class="panel-section active">
+      <h2 class="panel-title">Orbital Mechanics & Gravity</h2>
+      <div class="data-row">
+        <span class="data-label">Selected Object</span>
+        <span class="data-value" id="disp-name">Earth</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Semi-Major Axis (a)</span>
+        <span class="data-value" id="disp-radius">1.00 AU</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Gravitational Field (g)</span>
+        <span class="data-value" id="disp-g">9.81 m/s²</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Escape Velocity (v_e)</span>
+        <span class="data-value" id="disp-ve">11.18 km/s</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Kepler's Law</span>
+        <span class="data-value">T² ∝ a³</span>
+      </div>
+    </div>
+
+    <div id="eclipse-tab" class="panel-section">
+      <h2 class="panel-title">Upcoming Solar Eclipses</h2>
+      <div class="data-row">
+        <span class="data-label">Feb 06, 2027</span>
+        <span class="data-value">Annular Eclipse</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Aug 02, 2027</span>
+        <span class="data-value">Total Solar Eclipse</span>
+      </div>
+      <div class="data-row">
+        <span class="data-label">Jan 26, 2028</span>
+        <span class="data-value">Annular Eclipse</span>
+      </div>
+      <p style="font-size: 0.78rem; color: var(--text-sub); margin-top: 8px;">
+        Calculated using Moon orbital plane inclination angle θ ≈ 5.14°.
+      </p>
+    </div>
+
+    <div id="ai-tab" class="panel-section">
+      <h2 class="panel-title">AI Universe Assistant</h2>
+      <div class="chat-box" id="chat-box">
+        <div class="chat-msg bot">Hello! Tap any planet in 3D or ask me about Kepler's laws and eclipses.</div>
+      </div>
+      <div class="chat-input-wrap">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Ask a physics question...">
+        <button class="chat-send" onclick="sendAiMessage()">Ask</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchTab(evt, tabId) {
+      document.querySelectorAll('.panel-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      evt.target.classList.add('active');
+    }
+
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    camera.position.set(0, 40, 60);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.AmbientLight(0x333333));
+    const sunLight = new THREE.PointLight(0xffffff, 2, 500);
+    scene.add(sunLight);
+
+    const sun = new THREE.Mesh(
+      new THREE.SphereGeometry(5, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffb703 })
+    );
+    scene.add(sun);
+
+    const planetData = [
+      { name: 'Mercury', dist: 10, radius: 0.6, color: 0x8d99ae, g: '3.70 m/s²', ve: '4.25 km/s', au: '0.39 AU' },
+      { name: 'Venus', dist: 15, radius: 0.9, color: 0xe0a96d, g: '8.87 m/s²', ve: '10.36 km/s', au: '0.72 AU' },
+      { name: 'Earth', dist: 22, radius: 1.0, color: 0x00b4d8, g: '9.81 m/s²', ve: '11.18 km/s', au: '1.00 AU' },
+      { name: 'Mars', dist: 30, radius: 0.7, color: 0xe63946, g: '3.71 m/s²', ve: '5.03 km/s', au: '1.52 AU' }
+    ];
+
+    const planetMeshes = [];
+
+    planetData.forEach(p => {
+      const ringGeo = new THREE.RingGeometry(p.dist - 0.08, p.dist + 0.08, 64);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.1 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      scene.add(ring);
+
+      const mesh = new THREE.Mesh(
+        new THREE.SphereGeometry(p.radius, 32, 32),
+        new THREE.MeshStandardMaterial({ color: p.color })
+      );
+      mesh.userData = p;
+      scene.add(mesh);
+      planetMeshes.push(mesh);
+    });
+
+    let angle = 0;
+    function animate() {
+      requestAnimationFrame(animate);
+      angle += 0.005;
+
+      planetMeshes.forEach((p, idx) => {
+        const speed = (4 - idx) * 0.4;
+        p.position.x = Math.cos(angle * speed) * p.userData.dist;
+        p.position.z = Math.sin(angle * speed) * p.userData.dist;
+        p.rotation.y += 0.01;
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    window.addEventListener('click', (e) => {
+      if(e.target.tagName !== 'CANVAS') return;
+      mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(planetMeshes);
+
+      if (intersects.length > 0) {
+        const data = intersects[0].object.userData;
+        document.getElementById('disp-name').innerText = data.name;
+        document.getElementById('disp-radius').innerText = data.au;
+        document.getElementById('disp-g').innerText = data.g;
+        document.getElementById('disp-ve').innerText = data.ve;
+      }
+    });
+
+    function sendAiMessage() {
+      const input = document.getElementById('chat-input');
+      const box = document.getElementById('chat-box');
+      if(!input.value.trim()) return;
+
+      const userDiv = document.createElement('div');
+      userDiv.className = 'chat-msg user';
+      userDiv.innerText = input.value;
+      box.appendChild(userDiv);
+
+      const botDiv = document.createElement('div');
+      botDiv.className = 'chat-msg bot';
+      botDiv.innerText = "Analyzing astronomical parameters... Under Class 11 Physics, escape velocity v_e = √(2gR) and planetary motion obeys Kepler's third law T² ∝ a³.";
+      
+      setTimeout(() => {
+        box.appendChild(botDiv);
+        box.scrollTop = box.scrollHeight;
+      }, 400);
+
+      input.value = '';
+    }
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
